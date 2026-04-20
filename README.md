@@ -73,3 +73,21 @@ template-blockchain-dashboard/
     |-- m3_difficulty_history.py
     `-- m4_ai_component.py
 ```
+
+<!-- student-repo-auditor:teacher-feedback:start -->
+## Teacher Feedback
+
+### Kick-off Review
+
+Review time: 2026-04-20 13:55 CEST
+Status: Green
+
+Strength:
+- Your repository keeps the expected classroom structure.
+
+Improve now:
+- The code should connect the API output to theory, especially leading zeros and bits or target.
+
+Next step:
+- Add two short code comments that explain leading zeros and the meaning of bits or target.
+<!-- student-repo-auditor:teacher-feedback:end -->
