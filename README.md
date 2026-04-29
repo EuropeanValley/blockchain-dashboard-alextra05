@@ -79,15 +79,15 @@ template-blockchain-dashboard/
 
 ### Kick-off Review
 
-Review time: 2026-04-20 13:55 CEST
+Review time: 2026-04-29 20:31 CEST
 Status: Green
 
 Strength:
-- Your repository keeps the expected classroom structure.
+- I can see the dashboard structure integrating the checkpoint modules.
 
 Improve now:
-- The code should connect the API output to theory, especially leading zeros and bits or target.
+- The checkpoint evidence is strong: the dashboard and core modules are visibly progressing.
 
 Next step:
-- Add two short code comments that explain leading zeros and the meaning of bits or target.
+- Keep building on this checkpoint and prepare the final AI integration.
 <!-- student-repo-auditor:teacher-feedback:end -->
