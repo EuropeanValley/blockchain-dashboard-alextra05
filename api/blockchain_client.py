@@ -125,6 +125,21 @@ def get_difficulty_history(n_points: int = 100) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# M5: Merkle proof helpers
+# ---------------------------------------------------------------------------
+
+def get_block_transactions(block_hash: str) -> list[str]:
+    """Return the ordered list of txids for the block identified by block_hash."""
+    # /block/{hash}/txids returns a JSON array of hex transaction IDs
+    return _get(f"{BASE_URL}/block/{block_hash}/txids").json()
+
+
+def get_transaction(txid: str) -> dict:
+    """Return full transaction data for a given txid (as returned by Blockstream)."""
+    return _get(f"{BASE_URL}/tx/{txid}").json()
+
+
+# ---------------------------------------------------------------------------
 # Quick smoke-test
 # ---------------------------------------------------------------------------
 
