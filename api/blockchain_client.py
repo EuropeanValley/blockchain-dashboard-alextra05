@@ -140,6 +140,32 @@ def get_transaction(txid: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# M6: Security Score helpers
+# ---------------------------------------------------------------------------
+
+def get_current_hashrate() -> float:
+    """
+    Return the current estimated network hash rate in H/s.
+    Formula: hashrate ≈ difficulty × 2^32 / 600
+    Reuses get_latest_block() to avoid an extra round-trip.
+    """
+    latest = get_latest_block()
+    difficulty = float(latest["difficulty"])
+    # H = D × 2^32 / target_block_time_seconds
+    return difficulty * (2 ** 32) / 600
+
+
+def get_bitcoin_price_usd() -> float:
+    """
+    Fetch the current Bitcoin spot price in USD from mempool.space.
+    Endpoint: https://mempool.space/api/v1/prices
+    Returns the USD field as a float.
+    """
+    data = _get("https://mempool.space/api/v1/prices").json()
+    return float(data["USD"])
+
+
+# ---------------------------------------------------------------------------
 # Quick smoke-test
 # ---------------------------------------------------------------------------
 
