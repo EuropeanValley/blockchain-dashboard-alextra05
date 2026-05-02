@@ -23,7 +23,8 @@ Bitcoin blockchain analysis dashboard built with Python and Streamlit.
 | M2 | Block Header Analyzer | Done |
 | M3 | Difficulty History | Done |
 | M4 | AI Component | Done |
-| M5 | Merkle Proof Verifier | In progress |
+| M5 | Merkle Proof Verifier | Done |
+| M6 | Security Score | Done |
 
 ---
 
@@ -34,15 +35,16 @@ Bitcoin blockchain analysis dashboard built with Python and Streamlit.
 - M2 fetches the raw 80-byte block header, parses all 6 fields with correct little-endian handling, manually verifies SHA-256d Proof-of-Work using `hashlib`, and counts leading zero bits.
 - M3 plots difficulty evolution over time, marks each 2016-block adjustment epoch, and shows actual vs target block time ratios.
 - M4 runs a statistical anomaly detector on the last 200 inter-block times using the Exponential distribution as baseline, with metrics, scatter plot, and anomaly summary table.
+- M5 (optional) Merkle Proof Verifier fully implemented — builds the full Merkle tree, generates and verifies proofs step by step with SHA-256d.
+- M6 (optional) Security Score fully implemented — estimates 51% attack cost in USD/hour from live hash rate, and visualises confirmation depth vs attack probability using the Nakamoto 2008 formula.
 - Dashboard auto-refreshes every 60 seconds and handles API errors gracefully without crashing.
-- M5 (optional) Merkle Proof Verifier in progress — backend logic implemented.
 - Final report added to `report/report.pdf`.
 
 ---
 
 ## Next Step
 
-- Complete M5 Streamlit UI and integrate into the dashboard.
+- Project complete and ready for final submission.
 
 ---
 
@@ -74,7 +76,8 @@ blockchain-dashboard-alextra05/
 |   |-- m2_block_header.py
 |   |-- m3_difficulty_history.py
 |   |-- m4_ai_component.py
-|   `-- m5_merkle_proof.py
+|   |-- m5_merkle_proof.py
+|   `-- m6_security_score.py
 |-- tests/
 |   `-- test_dashboard.py
 `-- report/
