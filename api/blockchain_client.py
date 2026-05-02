@@ -166,6 +166,32 @@ def get_bitcoin_price_usd() -> float:
 
 
 # ---------------------------------------------------------------------------
+# M7: AI Predictor helpers
+# ---------------------------------------------------------------------------
+
+def get_difficulty_history_extended(n_points: int = 300) -> list[dict]:
+    """Return a list of {x: timestamp, y: difficulty} for the last n_points blocks."""
+    tip_height = get_tip_height()
+    result: list[dict] = []
+    current_height = tip_height
+
+    while len(result) < n_points and current_height > 0:
+        blocks = _get(f"{BASE_URL}/blocks/{current_height}").json()
+        if not blocks:
+            break
+        for block in blocks:
+            result.append({
+                "x": block["timestamp"],
+                "y": block["difficulty"],
+            })
+            if len(result) >= n_points:
+                break
+        current_height -= len(blocks)
+
+    return list(reversed(result[:n_points]))
+
+
+# ---------------------------------------------------------------------------
 # Quick smoke-test
 # ---------------------------------------------------------------------------
 
