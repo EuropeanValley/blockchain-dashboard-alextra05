@@ -132,3 +132,119 @@ def confirmation_safety_table(q: float, max_confirmations: int = 10) -> list[dic
             "safety_percentage":  100.0 * (1.0 - prob),
         })
     return rows
+
+
+# ---------------------------------------------------------------------------
+# Streamlit UI
+# ---------------------------------------------------------------------------
+
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+from api.blockchain_client import get_bitcoin_price_usd, get_current_hashrate
+
+# theme styling constants
+_BG       = "rgba(0,0,0,0)"
+_FONT     = "#e2e8f0"
+_PRIMARY  = "#6366f1"
+
+
+def render() -> None:
+    st.header("🛡️ M6 — Security Score")
+    st.markdown(
+        "Analyze the cost of a 51% attack and the probability of a successful "
+        "double-spend based on Nakamoto's 2008 whitepaper."
+    )
+
+    # fetch data from API
+    with st.spinner("Fetching network hashrate and BTC price..."):
+        try:
+            hashrate_hs = get_current_hashrate()
+            btc_price = get_bitcoin_price_usd()
+        except Exception as exc:
+            st.error(f"⚠️ Failed to load network data: {exc}")
+            return
+
+    # calculate metrics
+    hashrate_ehs = hashrate_hs / 1e18
+    attack_cost = estimate_attack_cost_per_hour(hashrate_hs, btc_price)
+
+    # display KPI metrics
+    mc1, mc2, mc3 = st.columns(3)
+    mc1.metric("Network Hash Rate", f"{hashrate_ehs:.2f} EH/s")
+    mc2.metric("Bitcoin Price", f"${btc_price:,.2f}")
+    mc3.metric("51% Attack Cost (Hourly)", f"${attack_cost:,.0f}")
+
+    st.divider()
+
+    st.subheader("Attack probability analysis")
+    
+    # attacker hash rate fraction slider
+    q = st.slider(
+        "Attacker hash rate fraction (q)",
+        min_value=0.01,
+        max_value=0.49,
+        value=0.25,
+        step=0.01
+    )
+
+    max_conf = 15
+    table_data = confirmation_safety_table(q, max_conf)
+
+    # line chart for attack probability
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[r["confirmations"] for r in table_data],
+        y=[r["attack_probability"] for r in table_data],
+        mode="lines+markers",
+        line=dict(color=_PRIMARY, width=2),
+        marker=dict(size=8, color=_PRIMARY),
+        name="Attack Probability"
+    ))
+
+    # 0.1% horizontal reference line
+    fig.add_hline(
+        y=0.001,
+        line_dash="dash",
+        line_color="rgba(239,68,68,0.8)",
+        annotation_text="0.1% Threshold",
+        annotation_font_color=_FONT
+    )
+
+    fig.update_layout(
+        xaxis_title="Number of Confirmations",
+        yaxis_title="Probability of Successful Attack",
+        margin=dict(l=10, r=10, t=30, b=10),
+        plot_bgcolor=_BG,
+        paper_bgcolor=_BG,
+        font=dict(color=_FONT),
+        height=400
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+
+    st.subheader("Confirmation safety table")
+    df = pd.DataFrame(table_data)
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "confirmations": st.column_config.NumberColumn("Confirmations"),
+            "attack_probability": st.column_config.NumberColumn("Attack Probability", format="%.6f"),
+            "safety_percentage": st.column_config.NumberColumn("Safety (%)", format="%.4f")
+        }
+    )
+
+    st.divider()
+
+    st.subheader("Nakamoto 2008 formula")
+    st.markdown(
+        "The probability of an attacker catching up from `z` blocks behind "
+        "is calculated using the formula described in Section 11 of the "
+        "Bitcoin whitepaper. It models the block generation process as a "
+        "Poisson random walk, where the expected number of blocks the attacker "
+        "mines while the honest network mines `z` blocks is `λ = z * (q/p)`."
+    )
