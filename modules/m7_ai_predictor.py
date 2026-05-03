@@ -1,4 +1,9 @@
 import numpy as np
+import streamlit as st
+import plotly.graph_objects as go
+from datetime import datetime
+from api.blockchain_client import get_difficulty_history_extended
+
 
 def prepare_dataset(history: list[dict]) -> tuple[np.ndarray, np.ndarray]:
     X = np.array([item["x"] for item in history], dtype=float)
@@ -74,3 +79,84 @@ def compare_models(metrics_lr: dict, metrics_ma: dict) -> str:
         return f"Moving Average performed better by {diff_pct:.2f}% based on MAE."
     else:
         return "Both models performed equally well based on MAE."
+
+def render() -> None:
+    st.header("🧠 M7 — AI Predictor")
+    
+    try:
+        # Fetch 300 data points
+        history = get_difficulty_history_extended(300)
+        if not history:
+            st.warning("No difficulty history available.")
+            return
+            
+        X, y = prepare_dataset(history)
+        
+        # 80-20 split
+        split_idx = int(len(X) * 0.8)
+        X_train, y_train = X[:split_idx], y[:split_idx]
+        X_test, y_test = X[split_idx:], y[split_idx:]
+        
+        # Train models
+        slope, intercept = train_linear_regression(X_train, y_train)
+        y_pred_lr = predict_linear_regression(slope, intercept, X)
+        y_pred_ma = train_moving_average(y, window=5)
+        
+        # Evaluate on test set
+        y_pred_lr_test = predict_linear_regression(slope, intercept, X_test)
+        y_pred_ma_test = y_pred_ma[split_idx:]
+        
+        metrics_lr = evaluate_model(y_test, y_pred_lr_test)
+        metrics_ma = evaluate_model(y_test, y_pred_ma_test)
+        
+        # KPI metrics
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("MAE Linear Reg.", f"{metrics_lr['MAE']/1e12:.2f} T")
+        col2.metric("RMSE Linear Reg.", f"{metrics_lr['RMSE']/1e12:.2f} T")
+        col3.metric("MAE Moving Avg.", f"{metrics_ma['MAE']/1e12:.2f} T")
+        col4.metric("RMSE Moving Avg.", f"{metrics_ma['RMSE']/1e12:.2f} T")
+        
+        # Plot chart
+        dates = [datetime.fromtimestamp(item["x"]) for item in history]
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=y/1e12, mode='lines', name='Actual Difficulty', line=dict(color='#3b82f6')))
+        fig.add_trace(go.Scatter(x=dates, y=y_pred_lr/1e12, mode='lines', name='Linear Regression', line=dict(color='#f97316', dash='dash')))
+        fig.add_trace(go.Scatter(x=dates, y=y_pred_ma/1e12, mode='lines', name='Moving Average', line=dict(color='#22c55e', dash='dot')))
+        
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#e2e8f0"),
+            xaxis_title="Date",
+            yaxis_title="Difficulty (Trillions)",
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Compare models side-by-side
+        st.subheader("📊 Performance Table")
+        t_col1, t_col2 = st.columns(2)
+        with t_col1:
+            st.markdown("**Linear Regression**")
+            st.write(f"MAE: {metrics_lr['MAE']:,.0f}")
+            st.write(f"RMSE: {metrics_lr['RMSE']:,.0f}")
+            st.write(f"MAPE: {metrics_lr['MAPE']:.2f}%")
+        with t_col2:
+            st.markdown("**Moving Average**")
+            st.write(f"MAE: {metrics_ma['MAE']:,.0f}")
+            st.write(f"RMSE: {metrics_ma['RMSE']:,.0f}")
+            st.write(f"MAPE: {metrics_ma['MAPE']:.2f}%")
+            
+        # Summary
+        summary_text = compare_models(metrics_lr, metrics_ma)
+        st.info(summary_text)
+        
+        # Expander explanation
+        with st.expander("ℹ️ M4 vs M7 Differences"):
+            st.write("This M7 AI Predictor uses supervised regression and moving averages to forecast difficulty trends over time.")
+            st.write("The M4 Anomaly Detector uses unsupervised isolation to find statistically unusual blocks. They solve entirely different problems.")
+            
+    except Exception as e:
+        st.error(f"Error rendering M7 Predictor: {e}")
